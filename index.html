@@ -163,11 +163,45 @@ By : ${r.by}
 }
 
 async function shareEntry(i){
-let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
-let r=arr[i];
-if(navigator.share){
-await navigator.share({title:"Daily Agenda",text:JSON.stringify(r,null,2)});
-}
+
+    let arr = JSON.parse(
+        localStorage.getItem("dailyAgenda") || "[]"
+    );
+
+    let r = arr[i];
+
+    let text = `Daily Agenda
+
+Date : ${r.date}
+
+Opening Balance : ${r.opening || 0}
+Closing Balance : ${r.closing || 0}
+
+Total Income Today : ${r.income || 0}
+Total Expense Today : ${r.expense || 0}
+
+Take Home Today : ${r.takehome || 0}
+
+Starting CC : ${r.startcc || 0}
+Ending CC : ${r.endcc || 0}
+No. of CC Used : ${r.ccused || 0}
+
+Notes :
+${r.notes || "-"}
+
+By : ${r.by || "-"}`;
+
+    if(navigator.share){
+
+        await navigator.share({
+            title: "Daily Agenda",
+            text: text
+        });
+
+    }else{
+
+        alert(text);
+    }
 }
 
 
