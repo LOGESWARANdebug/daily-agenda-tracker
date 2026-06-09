@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Agenda Tracker</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:15px}
+.container{max-width:900px;margin:auto;background:#fff;padding:20px;border-radius:12px}
+input,button{padding:10px;margin:5px 0;width:100%;box-sizing:border-box}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{border:1px solid #ddd;padding:10px;border-radius:10px;margin-top:10px}
+.dark{background:#111;color:#fff}.dark .container{background:#222}
+.smallbtn{width:auto;padding:8px 12px;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Daily Agenda Tracker</h2>
+
+<button onclick="toggleDark()">🌙 Dark Mode</button>
+
+<div class="row">
+<input type="date" id="date">
+<input type="text" id="by" placeholder="By: LKS / HSB">
+<input type="number" id="opening" placeholder="Opening Balance">
+<input type="number" id="closing" placeholder="Closing Balance">
+<input type="number" id="income" placeholder="Total Income">
+<input type="number" id="expense" placeholder="Total Expense">
+<input type="number" id="startcc" placeholder="Starting CC">
+<input type="number" id="endcc" placeholder="Ending CC">
+<input type="file" id="importFile" accept=".json" onchange="importBackup(event)">
+<textarea id="notes" placeholder="Daily Notes" rows="4"></textarea>
+</div>
+
+<h3 id="takehome">Take Home: 0</h3>
+<h3 id="ccused">CC Used: 0</h3>
+<h3 id="remainingcc">Remaining CC: 700</h3>
+
+<button onclick="saveEntry()">💾 Save Entry</button>
+<button onclick="exportCSV()">📤 Export CSV</button>
+<button onclick="exportMonthlyCSV()">
+📊 Monthly Report CSV
+</button>
+<button onclick="exportBackup()">
+💾 Export Backup
+</button>
+
+<input type="date" id="searchDate" onchange="loadHistory()" />
+
+<h2>History</h2>
+<div id="history"></div>
+</div>
+
+<script>
+document.getElementById('date').value=new Date().toISOString().split('T')[0];
+
+function calc(){
+
+    let income = +income.value || 0;
+    let expense = +expense.value || 0;
+
+    let s = +startcc.value || 0;
+    let e = +endcc.value || 0;
+
+    let ccused = (e - s) + 1;
+
+    takehome.innerText =
+    "Take Home : " + (income - expense);
+
+    document.getElementById("ccused").innerText =
+    "CC Used : " + ccused;
+
+    document.getElementById("remainingcc").innerText =
+    "Remaining CC : " + (700 - ccused);
+}
+const incomeEl=()=>document.getElementById("income");
+const expenseEl=()=>document.getElementById("expense");
+
+document.querySelectorAll("input").forEach(i=>i.addEventListener("input",calc));
+
+function updateRemainingCC(){
+
+    let arr =
+    JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
+
+    let totalUsed = 0;
+
+    arr.forEach(r=>{
+        totalUsed += Number(r.ccused || 0);
+    });
+
+    document.getElementById("remainingcc").innerText =
+    "Remaining CC : " + (700 - totalUsed);
+}
+
+function saveEntry(){
+let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
+arr.push({
+date:date.value,by:by.value,opening:opening.value,closing:closing.value,
+income:income.value,expense:expense.value,startcc:startcc.value,endcc:endcc.value,
+takehome:(+income.value||0)-(+expense.value||0),
+ccused:((+endcc.value||0)-(+startcc.value||0)+1),
+notes: notes.value,
+});
+localStorage.setItem("dailyAgenda",JSON.stringify(arr));
+loadHistory();
+updateRemainingCC();
+alert("Saved");
+}
+
+function deleteEntry(i){
+let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
+arr.splice(i,1);
+localStorage.setItem("dailyAgenda",JSON.stringify(arr));
+loadHistory();
+updateRemainingCC();
+}
+
+function editEntry(i){
+let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
+let r=arr[i];
+for(let k in r){ if(document.getElementById(k)) document.getElementById(k).value=r[k];}
+deleteEntry(i);
+calc();
+}
+
+function downloadEntry(i){
+
+    let arr = JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
+    let r = arr[i];
+
+    let txt = `
+Daily Agenda
+
+Date : ${r.date}
+
+Opening Balance : ${r.opening}
+Closing Balance : ${r.closing}
+
+Total Income Today : ${r.income}
+Total Expense Today : ${r.expense}
+
+Take Home Today : ${r.takehome}
+
+Starting CC : ${r.startcc}
+Ending CC : ${r.endcc}
+No. of CC Used : ${r.ccused}
+
+Notes :
+${r.notes || "-"}
+
+By : ${r.by}
+`;
+
+    let blob = new Blob([txt], {type:"text/plain"});
+    let a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = `DailyAgenda_${r.date}.txt`;
+
+    a.click();
+}
+
+async function shareEntry(i){
+let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
+let r=arr[i];
+if(navigator.share){
+await navigator.share({title:"Daily Agenda",text:JSON.stringify(r,null,2)});
+}
+}
+
+
+function exportCSV(){
+let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
+if(!arr.length){alert("No data");return;}
+let csv=Object.keys(arr[0]).join(",")+"\n";
+arr.forEach(r=>csv+=Object.values(r).join(",")+"\n");
+let blob=new Blob([csv],{type:"text/csv"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="DailyAgenda.csv";
+a.click();
+}
+
+function exportBackup(){
+
+    let data =
+    localStorage.getItem("dailyAgenda") || "[]";
+
+    let blob = new Blob([data],{
+        type:"application/json"
+    });
+
+    let a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+
+    a.download = "DailyAgenda_Backup.json";
+
+    a.click();
+}
+
+function importBackup(event){
+
+    let file = event.target.files[0];
+
+    if(!file) return;
+
+    let reader = new FileReader();
+
+    reader.onload = function(e){
+
+        try{
+
+            let data =
+            JSON.parse(e.target.result);
+
+            localStorage.setItem(
+                "dailyAgenda",
+                JSON.stringify(data)
+            );
+
+            alert("Backup Imported Successfully");
+
+            loadHistory();
+            updateRemainingCC();
+
+        }catch(err){
+
+            alert("Invalid Backup File");
+
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+function exportMonthlyCSV(){
+
+    let arr = JSON.parse(
+        localStorage.getItem("dailyAgenda") || "[]"
+    );
+
+    let month = prompt(
+        "Enter Month (YYYY-MM)",
+        new Date().toISOString().substring(0,7)
+    );
+
+    if(!month) return;
+
+    let filtered = arr.filter(r =>
+        r.date.startsWith(month)
+    );
+
+    filtered.sort((a,b)=>
+        new Date(a.date) - new Date(b.date)
+    );
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let totalTakeHome = 0;
+    let totalCC = 0;
+
+    let totalStockCC = 700;
+    let runningCC = 0;
+
+    let csv =
+"Date,,Income,,Expense,,Take Home,,Start CC,,End CC,,CC Used,,Remaining CC,,Notes\n";
+
+    filtered.forEach(r=>{
+
+        let income = Number(r.income || 0);
+        let expense = Number(r.expense || 0);
+        let takehome = Number(r.takehome || 0);
+        let ccused = Number(r.ccused || 0);
+
+        runningCC += ccused;
+
+        let remainingCC =
+            totalStockCC - runningCC;
+
+        csv +=
+`"${r.date}",
+"${income}",
+"${expense}",
+"${takehome}",
+"${r.startcc}",
+"${r.endcc}",
+"${ccused}",
+"${remainingCC}",
+"${(r.notes || "").replace(/"/g,'""')}"
+`.replace(/\n/g,",").slice(0,-1) + "\n";
+
+        totalIncome += income;
+        totalExpense += expense;
+        totalTakeHome += takehome;
+        totalCC += ccused;
+    });
+
+    let finalRemaining =
+        totalStockCC - totalCC;
+
+    csv +=
+`"TOTAL",
+"${totalIncome}",
+"${totalExpense}",
+"${totalTakeHome}",
+"",
+"",
+"${totalCC}",
+"${finalRemaining}",
+""
+`.replace(/\n/g,",").slice(0,-1);
+
+    let blob = new Blob(
+        [csv],
+        {type:"text/csv;charset=utf-8;"}
+    );
+
+    let a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+
+    a.download = month + "_Report.csv";
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(a.href);
+}
+
+
+function loadHistory(){
+let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
+let s=document.getElementById("searchDate").value;
+let h=document.getElementById("history");
+h.innerHTML="";
+arr.forEach((r,i)=>{
+if(s && r.date!==s) return;
+h.innerHTML+=`<div class="card">
+<b>${r.date}</b><br>
+Income: ${r.income} | Expense: ${r.expense}<br>
+Take Home: ${r.takehome}<br>
+Starting CC : ${r.startcc}<br>
+Ending CC : ${r.endcc}<br>
+CC Used : ${(r.endcc-r.startcc+1)}<br>
+Notes : ${r.notes || "-"}<br>
+By: ${r.by}<br><br>
+<button class="smallbtn" onclick="downloadEntry(${i})">⬇️ Download</button>
+<button class="smallbtn" onclick="editEntry(${i})">✏️ Edit</button>
+<button class="smallbtn" onclick="deleteEntry(${i})">🗑 Delete</button>
+<button class="smallbtn" onclick="shareEntry(${i})">📤 Share</button>
+</div>`;
+});
+
+}
+
+function toggleDark(){document.body.classList.toggle("dark");}
+loadHistory();
+updateRemainingCC();
+
+</script>
+</body>
+</html>
