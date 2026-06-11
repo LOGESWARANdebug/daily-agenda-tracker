@@ -512,29 +512,43 @@ function exportMonthlyCSV(){
 }
 
 
-function loadHistory(){
-let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
-let s=document.getElementById("searchDate").value;
-let h=document.getElementById("history");
-h.innerHTML="";
-arr.forEach((r,i)=>{
-if(s && r.date!==s) return;
-h.innerHTML+=`<div class="card">
-<b>${r.date}</b><br>
-Income: ${r.income} | Expense: ${r.expense}<br>
-Take Home: ${r.takehome}<br>
-Starting CC : ${r.startcc}<br>
-Ending CC : ${r.endcc}<br>
-CC Used : ${(r.endcc-r.startcc+1)}<br>
-Notes : ${r.notes || "-"}<br>
-By: ${r.by}<br><br>
-<button class="smallbtn" onclick="downloadEntry(${i})">⬇️ Download</button>
-<button class="smallbtn" onclick="editEntry(${i})">✏️ Edit</button>
-<button class="smallbtn" onclick="deleteEntry(${i})">🗑 Delete</button>
-<button class="smallbtn" onclick="shareEntry(${i})">📤 Share</button>
-</div>`;
-});
+function loadHistory() {
+    let arr = JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
+    let s = document.getElementById("searchDate").value;
+    let h = document.getElementById("history");
 
+    h.innerHTML = "";
+
+    // Filter by search date if selected
+    if (s) {
+        arr = arr.filter(r => r.date === s);
+    }
+
+    // Sort by date (newest first)
+    arr.sort((a, b) => b.date.localeCompare(a.date));
+
+    arr.forEach((r, i) => {
+        h.innerHTML += `
+        <div class="card">
+            <b>${r.date}</b><br>
+            Income: ${r.income} | Expense: ${r.expense}<br>
+            Take Home: ${r.takehome}<br>
+            Starting CC: ${r.startcc}<br>
+            Ending CC: ${r.endcc}<br>
+            CC Used: ${(Number(r.endcc) - Number(r.startcc) + 1)}<br>
+            Notes: ${r.notes || "-"}<br>
+            By: ${r.by}<br><br>
+
+            <button class="smallbtn" onclick="downloadEntry(${i})">⬇️ Download</button>
+            <button class="smallbtn" onclick="editEntry(${i})">✏️ Edit</button>
+            <button class="smallbtn" onclick="deleteEntry(${i})">🗑 Delete</button>
+            <button class="smallbtn" onclick="shareEntry(${i})">📤 Share</button>
+        </div>`;
+    });
+
+    if (arr.length === 0) {
+        h.innerHTML = "<p>No records found.</p>";
+    }
 }
 
 function toggleDark(){document.body.classList.toggle("dark");}
