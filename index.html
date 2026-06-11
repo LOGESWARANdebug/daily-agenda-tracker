@@ -190,8 +190,9 @@ input{
 📊 Monthly Report CSV
 </button>
 
-
+<label for="searchDate" style="margin-right:8px;">Search</label>
 <input type="date" id="searchDate" onchange="loadHistory()" />
+<button onclick="clearSearch()">❌ Clear</button>
 
 <h2>History</h2>
 <div id="history"></div>
@@ -550,6 +551,11 @@ function loadHistory() {
     if (arr.length === 0) {
         h.innerHTML = "<p>No records found.</p>";
     }
+}
+
+function clearSearch() {
+    document.getElementById("searchDate").value = "";
+    loadHistory(); // Reload all records
 }
 
 function toggleDark(){document.body.classList.toggle("dark");}
