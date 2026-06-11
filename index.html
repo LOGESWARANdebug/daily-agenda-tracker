@@ -254,66 +254,129 @@ updateRemainingCC();
 alert("Saved");
 }
 
+let displayedRecords = [];
+
 function deleteEntry(i){
-let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
-arr.splice(i,1);
-localStorage.setItem("dailyAgenda",JSON.stringify(arr));
-loadHistory();
-updateRemainingCC();
+
+    let r = displayedRecords[i];
+
+    if(!r) return;
+
+    let arr = JSON.parse(
+        localStorage.getItem("dailyAgenda") || "[]"
+    );
+
+    let index = arr.findIndex(x =>
+        x.date === r.date &&
+        x.income == r.income &&
+        x.startcc == r.startcc
+    );
+
+    if(index > -1){
+
+        arr.splice(index,1);
+
+        localStorage.setItem(
+            "dailyAgenda",
+            JSON.stringify(arr)
+        );
+
+        loadHistory();
+        updateRemainingCC();
+    }
 }
 
 function editEntry(i){
-let arr=JSON.parse(localStorage.getItem("dailyAgenda")||"[]");
-let r=arr[i];
-for(let k in r){ if(document.getElementById(k)) document.getElementById(k).value=r[k];}
-deleteEntry(i);
-calc();
+
+    let r = displayedRecords[i];
+
+    if(!r) return;
+
+    let arr = JSON.parse(
+        localStorage.getItem("dailyAgenda") || "[]"
+    );
+
+    let index = arr.findIndex(x =>
+        x.date === r.date &&
+        x.income == r.income &&
+        x.startcc == r.startcc
+    );
+
+    if(index > -1){
+
+        arr.splice(index,1);
+
+        localStorage.setItem(
+            "dailyAgenda",
+            JSON.stringify(arr)
+        );
+    }
+
+    for(let k in r){
+
+        let el =
+        document.getElementById(k);
+
+        if(el){
+            el.value = r[k];
+        }
+    }
+
+    calc();
+
+    loadHistory();
+    updateRemainingCC();
 }
 
 function downloadEntry(i){
 
-    let arr = JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
-    let r = arr[i];
+    let r = displayedRecords[i];
 
-    let txt = `
-Daily Agenda
+    if(!r) return;
+
+    let txt = `Daily Agenda
 
 Date : ${r.date}
 
-Opening Balance : ${r.opening}
-Closing Balance : ${r.closing}
+Opening Balance : ${r.opening || 0}
+Closing Balance : ${r.closing || 0}
 
-Total Income Today : ${r.income}
-Total Expense Today : ${r.expense}
+Total Income Today : ${r.income || 0}
+Total Expense Today : ${r.expense || 0}
 
-Take Home Today : ${r.takehome}
+Take Home Today : ${r.takehome || 0}
 
-Starting CC : ${r.startcc}
-Ending CC : ${r.endcc}
-No. of CC Used : ${r.ccused}
+Starting CC : ${r.startcc || 0}
+Ending CC : ${r.endcc || 0}
+No. of CC Used : ${r.ccused || 0}
 
 Notes :
 ${r.notes || "-"}
 
-By : ${r.by}
-`;
+By : ${r.by || "-"}`;
 
-    let blob = new Blob([txt], {type:"text/plain"});
-    let a = document.createElement("a");
+    let blob = new Blob(
+        [txt],
+        {type:"text/plain"}
+    );
 
-    a.href = URL.createObjectURL(blob);
-    a.download = `DailyAgenda_${r.date}.txt`;
+    let a =
+    document.createElement("a");
+
+    a.href =
+    URL.createObjectURL(blob);
+
+    a.download =
+    `DailyAgenda_${r.date}.txt`;
 
     a.click();
 }
 
 async function shareEntry(i){
 
-    let arr = JSON.parse(
-        localStorage.getItem("dailyAgenda") || "[]"
-    );
+    let r = displayedRecords[i];
 
-    let r = arr[i];
+    if(!r) return;
 
     let text = `Daily Agenda
 
@@ -339,8 +402,8 @@ By : ${r.by || "-"}`;
     if(navigator.share){
 
         await navigator.share({
-            title: "Daily Agenda",
-            text: text
+            title:"Daily Agenda",
+            text:text
         });
 
     }else{
@@ -514,43 +577,78 @@ function exportMonthlyCSV(){
 
 
 function loadHistory() {
-    let arr = JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
+
+    let arr = JSON.parse(
+        localStorage.getItem("dailyAgenda") || "[]"
+    );
+
     let s = document.getElementById("searchDate").value;
     let h = document.getElementById("history");
 
     h.innerHTML = "";
 
-    // Filter by search date if selected
     if (s) {
         arr = arr.filter(r => r.date === s);
-        console.log("Selected:", s);
-        console.log("Stored dates:", arr.map(r => r.date));
     }
 
-    // Sort by date (newest first)
-    arr.sort((a, b) => b.date.localeCompare(a.date));
+    // Sort newest first
+    arr.sort((a, b) =>
+        b.date.localeCompare(a.date)
+    );
+
+    displayedRecords = arr;
 
     arr.forEach((r, i) => {
+
         h.innerHTML += `
         <div class="card">
+
             <b>${r.date}</b><br>
-            Income: ${r.income} | Expense: ${r.expense}<br>
+
+            Income: ${r.income}<br>
+            Expense: ${r.expense}<br>
+
             Take Home: ${r.takehome}<br>
+
             Starting CC: ${r.startcc}<br>
             Ending CC: ${r.endcc}<br>
-            CC Used: ${(Number(r.endcc) - Number(r.startcc) + 1)}<br>
-            Notes: ${r.notes || "-"}<br>
-            By: ${r.by}<br><br>
 
-            <button class="smallbtn" onclick="downloadEntry(${i})">⬇️ Download</button>
-            <button class="smallbtn" onclick="editEntry(${i})">✏️ Edit</button>
-            <button class="smallbtn" onclick="deleteEntry(${i})">🗑 Delete</button>
-            <button class="smallbtn" onclick="shareEntry(${i})">📤 Share</button>
+            CC Used:
+            ${(Number(r.endcc) - Number(r.startcc) + 1)}
+            <br>
+
+            Notes:
+            ${r.notes || "-"}<br>
+
+            By:
+            ${r.by}<br><br>
+
+            <button class="smallbtn"
+            onclick="downloadEntry(${i})">
+            ⬇️ Download
+            </button>
+
+            <button class="smallbtn"
+            onclick="editEntry(${i})">
+            ✏️ Edit
+            </button>
+
+            <button class="smallbtn"
+            onclick="deleteEntry(${i})">
+            🗑 Delete
+            </button>
+
+            <button class="smallbtn"
+            onclick="shareEntry(${i})">
+            📤 Share
+            </button>
+
         </div>`;
     });
 
-    if (arr.length === 0) {
-        h.innerHTML = "<p>No records found.</p>";
+    if(arr.length === 0){
+        h.innerHTML =
+        "<p>No records found.</p>";
     }
 }
 
