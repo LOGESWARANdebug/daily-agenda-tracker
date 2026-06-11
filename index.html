@@ -176,6 +176,9 @@ input{
 <label for="importFile" style="margin-right:8px;">Import Backup:</label>
 <input type="file" id="importFile" accept=".json" onchange="importBackup(event)">
 </div>
+<button onclick="exportBackup()">
+💾 Export Backup
+</button>
 
 <h3 id="takehome">Take Home: 0</h3>
 <h3 id="ccused">CC Used: 0</h3>
@@ -186,9 +189,7 @@ input{
 <button onclick="exportMonthlyCSV()">
 📊 Monthly Report CSV
 </button>
-<button onclick="exportBackup()">
-💾 Export Backup
-</button>
+
 
 <input type="date" id="searchDate" onchange="loadHistory()" />
 
