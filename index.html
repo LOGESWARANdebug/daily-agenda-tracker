@@ -524,6 +524,8 @@ function loadHistory() {
     // Filter by search date if selected
     if (s) {
         arr = arr.filter(r => r.date === s);
+        console.log("Selected:", s);
+        console.log("Stored dates:", arr.map(r => r.date));
     }
 
     // Sort by date (newest first)
