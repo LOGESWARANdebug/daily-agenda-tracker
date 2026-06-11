@@ -201,15 +201,14 @@ input{
 <script>
 document.getElementById('date').value=new Date().toISOString().split('T')[0];
 
-function calc(){
+function calc() {
+    let income = +document.getElementById("income").value || 0;
+    let expense = +document.getElementById("expense").value || 0;
 
-    let income = +income.value || 0;
-    let expense = +expense.value || 0;
+    let s = +document.getElementById("startcc").value || 0;
+    let e = +document.getElementById("endcc").value || 0;
 
-    let s = +startcc.value || 0;
-    let e = +endcc.value || 0;
-
-    let ccused = (e - s) + 1;
+    let ccused = (e >= s && s > 0) ? (e - s + 1) : 0;
 
     document.getElementById("takehome").innerText =
         "Take Home : " + (income - expense);
