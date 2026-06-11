@@ -211,14 +211,14 @@ function calc(){
 
     let ccused = (e - s) + 1;
 
-    takehome.innerText =
-    "Take Home : " + (income - expense);
+    document.getElementById("takehome").innerText =
+        "Take Home : " + (income - expense);
 
     document.getElementById("ccused").innerText =
-    "CC Used : " + ccused;
+        "CC Used : " + ccused;
 
     document.getElementById("remainingcc").innerText =
-    "Remaining CC : " + (700 - ccused);
+        "Remaining CC : " + (700 - ccused);
 }
 const incomeEl=()=>document.getElementById("income");
 const expenseEl=()=>document.getElementById("expense");
