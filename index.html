@@ -166,12 +166,12 @@ input{
 <div class="row">
 <input type="date" id="date">
 <input type="text" id="by" placeholder="By: LKS / HSB">
-<input type="number" id="opening" placeholder="Opening Balance">
-<input type="number" id="closing" placeholder="Closing Balance">
-<input type="number" id="income" placeholder="Total Income">
-<input type="number" id="expense" placeholder="Total Expense">
-<input type="number" id="startcc" placeholder="Starting CC">
-<input type="number" id="endcc" placeholder="Ending CC">
+<input type="number" id="opening" oninput="calc()" placeholder="Opening Balance">
+<input type="number" id="closing" oninput="calc()" placeholder="Closing Balance">
+<input type="number" id="income" oninput="calc()" placeholder="Total Income">
+<input type="number" id="expense" oninput="calc()" placeholder="Total Expense">
+<input type="number" id="startcc" oninput="calc()" placeholder="Starting CC">
+<input type="number" id="endcc" oninput="calc()" placeholder="Ending CC">
 <textarea id="notes" placeholder="Daily Notes" rows="4"></textarea>
 <label for="importFile" style="margin-right:8px;">Import Backup:</label>
 <input type="file" id="importFile" accept=".json" onchange="importBackup(event)">
