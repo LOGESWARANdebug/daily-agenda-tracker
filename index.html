@@ -184,6 +184,8 @@ input{
 <h3 id="ccused">CC Used: 0</h3>
 <h3 id="remainingcc">Remaining CC: 700</h3>
 
+<button onclick="resetCC()">🔄 New CC</button>
+
 <button onclick="saveEntry()">💾 Save Entry</button>
 <button onclick="exportCSV()">📤 Export CSV</button>
 <button onclick="exportMonthlyCSV()">
@@ -326,6 +328,55 @@ function editEntry(i){
 
     loadHistory();
     updateRemainingCC();
+}
+
+function resetCC(){
+
+    let confirmReset = confirm(
+        "Start a NEW CC stock?\n\nCurrent CC usage will be archived and CC will reset to 700."
+    );
+
+    if(!confirmReset) return;
+
+    let history =
+        JSON.parse(localStorage.getItem("ccResetHistory") || "[]");
+
+    let currentUsed =
+        700 - getTotalCCUsed();
+
+    history.push({
+        date: new Date().toISOString().split("T")[0],
+        used: getTotalCCUsed(),
+        remaining: currentUsed
+    });
+
+    localStorage.setItem(
+        "ccResetHistory",
+        JSON.stringify(history)
+    );
+
+    // Start a new CC cycle
+    localStorage.setItem("ccCycleUsed", "0");
+
+    document.getElementById("remainingcc").innerText =
+        "Remaining CC : 700";
+
+    alert("New CC started successfully!\nCC reset to 700.");
+}
+
+
+function getTotalCCUsed(){
+
+    let arr =
+        JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
+
+    let total = 0;
+
+    arr.forEach(r => {
+        total += Number(r.ccused || 0);
+    });
+
+    return total;
 }
 
 function downloadEntry(i){
