@@ -1,1 +1,63 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Daily Agenda Login</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="style.css" rel="stylesheet"></head><body><div class="login-wrap"><div class="card login-card shadow-lg"><div class="card-body p-4 p-md-5"><div class="text-center mb-4"><div class="display-6">📋</div><h2>Daily Agenda</h2><p class="text-secondary">Secure Login</p></div><div id="msg"></div><form id="form"><input id="email" type="email" class="form-control form-control-lg mb-3" placeholder="Email" required><input id="password" type="password" class="form-control form-control-lg mb-3" placeholder="Password" required><button class="btn btn-primary btn-lg w-100">🔐 Login</button></form><button id="reset" class="btn btn-link w-100 mt-2">Forgot password?</button></div></div></div><script type="module">import{initializeApp}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';import{getAuth,signInWithEmailAndPassword,sendPasswordResetEmail,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';import{getFirestore,doc,getDoc}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';import{firebaseConfig}from'./firebase-config.js';const a=initializeApp(firebaseConfig),auth=getAuth(a),db=getFirestore(a),msg=t=>document.getElementById('msg').innerHTML='<div class="alert alert-danger">'+t+'</div>';onAuthStateChanged(auth,u=>{if(u)location.href='index.html'});form.onsubmit=async e=>{e.preventDefault();try{await signInWithEmailAndPassword(auth,email.value.trim(),password.value)}catch(e){msg('Login failed. Check email and password.')}};reset.onclick=async()=>{if(!email.value)return msg('Enter your email first.');try{await sendPasswordResetEmail(auth,email.value.trim());document.getElementById('msg').innerHTML='<div class="alert alert-success">Reset email sent.</div>'}catch(e){msg('Could not send reset email.')}};</script></body></html>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Daily Agenda Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+  </head><body><div class="login-wrap">
+    <div class="card login-card shadow-lg">
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+          <div class="display-6">📋</div>
+          <h2>Daily Agenda</h2>
+          <p class="text-secondary">Secure Login</p>
+        </div>
+        <div id="msg">
+          
+        </div>
+        <form id="form">
+          <input id="email" type="email" class="form-control form-control-lg mb-3" placeholder="Email" required>
+          <input id="password" type="password" class="form-control form-control-lg mb-3" placeholder="Password" required>
+          <button class="btn btn-primary btn-lg w-100">🔐 Login</button>
+        </form>
+        <button id="reset" class="btn btn-link w-100 mt-2">Forgot password?</button>
+      </div>
+    </div>
+  </div>
+    <script type="module">
+      import{initializeApp}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+      import{getAuth,signInWithEmailAndPassword,sendPasswordResetEmail,onAuthStateChanged}
+        from'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+      import{getFirestore,doc,getDoc}
+        from'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+      import{firebaseConfig}from'./firebase-config.js';
+      const a=initializeApp(firebaseConfig),auth=getAuth(a),db=getFirestore(a),msg=t=>document.getElementById('msg').innerHTML='<div class="alert alert-danger">'+t+'</div>';
+      onAuthStateChanged(auth,u=>{if(u)location.href='index.html'});
+      form.onsubmit=async e=>
+        {
+          e.preventDefault();
+          try{
+            await signInWithEmailAndPassword(auth,email.value.trim(),password.value)
+          }
+          catch(e)
+          {
+            msg('Login failed. Check email and password.')
+          }
+        };
+      reset.onclick=async()=>
+        {
+          if(!email.value)
+            return msg('Enter your email first.');
+          try
+          {
+            await sendPasswordResetEmail(auth,email.value.trim());
+            document.getElementById('msg').innerHTML='<div class="alert alert-success">Reset email sent.</div>'}
+          catch(e)
+          {msg('Could not send reset email.')
+          }
+        };
+    </script>
+  </body>
+</html>
