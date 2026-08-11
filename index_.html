@@ -301,7 +301,7 @@ closeSidebar.addEventListener("click", function () {
       
       const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
       
-      let user,profile,rows=[];
+      let user,profile,rows=[],ccInfo={cycle:1,cycleStartAt:null};
       
       const $=id=>document.getElementById(id),today=()=>new Date().toISOString().slice(0,10);$('date').value=today();
       
@@ -313,6 +313,27 @@ closeSidebar.addEventListener("click", function () {
       function calc()
       {
         let i=+$('income').value||0,e=+$('expense').value||0,s=+$('startcc').value||0,n=+$('endcc').value||0;$('take').textContent=i-e;$('used').textContent=n>=s&&s>0?n-s+1:0}document.querySelectorAll('#agenda input,#agenda textarea').forEach(x=>x.oninput=calc);
+      async function loadCC(){
+        try{
+          let s=await getDoc(doc(db,'settings','cc'));
+          ccInfo=s.exists()?{cycle:s.data().cycle||1,cycleStartAt:s.data().cycleStartAt||null}:{cycle:1,cycleStartAt:null};
+        }catch(e){
+          ccInfo={cycle:1,cycleStartAt:null};
+        }
+        $('cycle').textContent=ccInfo.cycle;
+      }
+
+      function ccUsedThisCycle(){
+        return rows.filter(r=>!ccInfo.cycleStartAt||(r.createdAt&&r.createdAt>=ccInfo.cycleStartAt))
+                    .reduce((a,r)=>a+Number(r.ccused||0),0);
+      }
+
+      function updateCCDisplays(){
+        let remaining=Math.max(0,700-ccUsedThisCycle());
+        $('sc').textContent=remaining;
+        $('remain').textContent=remaining;
+      }
+
       onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html';
       user=u;let s=await getDoc(doc(db,'users',u.uid));if(!s.exists()){await signOut(auth);
                                                                        
@@ -321,7 +342,7 @@ closeSidebar.addEventListener("click", function () {
       $('name').textContent=profile.name||u.email;$('role').textContent=profile.role==='admin'?'Administrator':'Employee';$('by').value=profile.name||u.email;
       if(profile.role!=='admin')document.querySelectorAll('.admin').forEach(x=>x.remove());
         
-      else{await load();show('dashboard')}});
+      else{await loadCC();await load();show('dashboard')}});
       
       document.querySelectorAll('[data-page]').forEach(x=>x.onclick=e=>{e.preventDefault();
       show(x.dataset.page)});
@@ -333,7 +354,7 @@ closeSidebar.addEventListener("click", function () {
         
        if(p==='history')render();
         
-       if(p==='dashboard')stats()}$('menu').onclick=()=>$('side').classList.toggle('show');$('logout').onclick=()=>signOut(auth);
+       if(p==='dashboard'||p==='cc')updateCCDisplays();if(p==='dashboard')stats()}$('menu').onclick=()=>$('side').classList.toggle('show');$('logout').onclick=()=>signOut(auth);
       
       let editingId=null;
 
@@ -371,7 +392,7 @@ closeSidebar.addEventListener("click", function () {
       }
       function stats()
       {
-        let i=rows.reduce((a,r)=>a+Number(r.income||0),0),e=rows.reduce((a,r)=>a+Number(r.expense||0),0),c=rows.reduce((a,r)=>a+Number(r.ccused||0),0);$('si').textContent=i.toLocaleString('en-IN');$('se').textContent=e.toLocaleString('en-IN');$('st').textContent=(i-e).toLocaleString('en-IN');$('sc').textContent=Math.max(0,700-c)
+        let i=rows.reduce((a,r)=>a+Number(r.income||0),0),e=rows.reduce((a,r)=>a+Number(r.expense||0),0);$('si').textContent=i.toLocaleString('en-IN');$('se').textContent=e.toLocaleString('en-IN');$('st').textContent=(i-e).toLocaleString('en-IN');updateCCDisplays()
       }
       function esc(v)
       {
@@ -463,9 +484,14 @@ By : ${r.by||"-"}`;
       {
         let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([x],{type:t}));a.download=n;a.click()}$('newcc').onclick=async()=>
         {
-          if(!confirm('Start a new 700 CC cycle?'))return;
-          let s=await getDoc(doc(db,'settings','cc')),c=Number(s.data()?.cycle||1)+1;
-          await setDoc(doc(db,'settings','cc'),{cycle:c,remaining:700,updatedAt:new Date().toISOString()});$('cycle').textContent=c;$('remain').textContent=700;notice('New CC cycle started')
+          if(!confirm('Start a new 700 CC cycle? This marks right now as the start of the new cartridge.'))return;
+          let newCycle=(ccInfo.cycle||1)+1;
+          let cycleStartAt=new Date().toISOString();
+          await setDoc(doc(db,'settings','cc'),{cycle:newCycle,cycleStartAt,updatedAt:cycleStartAt});
+          ccInfo={cycle:newCycle,cycleStartAt};
+          $('cycle').textContent=newCycle;
+          updateCCDisplays();
+          notice('New CC cycle started — remaining reset to 700');
         };
 
       function exportMonthlyCSV() {
