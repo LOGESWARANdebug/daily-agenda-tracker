@@ -68,7 +68,7 @@
 
         <a
             class="nav-link admin"
-            href="index.html"
+            href="index__.html"
             class="btn btn-primary"
        >
           📄 Open Classic Page
@@ -310,9 +310,17 @@ closeSidebar.addEventListener("click", function () {
         $('alert').innerHTML='<div class="alert alert-'+c+'">'+t+'</div>'
       }
       
-      function calc()
-      {
-        let i=+$('income').value||0,e=+$('expense').value||0,s=+$('startcc').value||0,n=+$('endcc').value||0;$('take').textContent=i-e;$('used').textContent=n>=s&&s>0?n-s+1:0}document.querySelectorAll('#agenda input,#agenda textarea').forEach(x=>x.oninput=calc);
+      function calcCCUsed(start,end){
+        const s=Number(start||0), n=Number(end||0);
+        if(s<1||s>700||n<1||n>700)return 0;
+        return n>=s ? n-s+1 : (700-s+1)+n;
+      }
+      function calc(){
+        const i=+$('income').value||0,e=+$('expense').value||0;
+        $('take').textContent=i-e;
+        $('used').textContent=calcCCUsed($('startcc').value,$('endcc').value);
+      }
+      document.querySelectorAll('#agenda input,#agenda textarea').forEach(x=>x.oninput=calc);
       async function loadCC(){
         try{
           let s=await getDoc(doc(db,'settings','cc'));
@@ -323,13 +331,18 @@ closeSidebar.addEventListener("click", function () {
         $('cycle').textContent=ccInfo.cycle;
       }
 
-      function ccUsedThisCycle(){
-        return rows.filter(r=>!ccInfo.cycleStartAt||(r.createdAt&&r.createdAt>=ccInfo.cycleStartAt))
-                    .reduce((a,r)=>a+Number(r.ccused||0),0);
+      function getCCRecords(){
+        return [...rows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       }
-
+      function ccUsedThisCycle(){
+        const startAt=ccInfo.cycleStartAt;
+        return getCCRecords().filter(r=>!startAt||(r.createdAt&&r.createdAt>=startAt))
+          .reduce((a,r)=>a+calcCCUsed(r.startcc,r.endcc),0);
+      }
       function updateCCDisplays(){
-        let remaining=Math.max(0,700-ccUsedThisCycle());
+        const used=ccUsedThisCycle(), pos=used%700;
+        const remaining=pos===0?700:700-pos;
+        $('cycle').textContent=(ccInfo.cycle||1)+Math.floor(used/700);
         $('sc').textContent=remaining;
         $('remain').textContent=remaining;
       }
@@ -374,7 +387,7 @@ closeSidebar.addEventListener("click", function () {
         {
           e.preventDefault();
           let i=+$('income').value||0,x=+$('expense').value||0,s=+$('startcc').value||0,n=+$('endcc').value||0;
-          const payload={date:$('date').value,employeeId:user.uid,by:profile.name||user.email,opening:$('opening').value,closing:$('closing').value,income:i,expense:x,takehome:i-x,startcc:$('startcc').value,endcc:$('endcc').value,ccused:n>=s&&s>0?n-s+1:0,notes:$('notes').value};
+          const payload={date:$('date').value,employeeId:user.uid,by:profile.name||user.email,opening:$('opening').value,closing:$('closing').value,income:i,expense:x,takehome:i-x,startcc:$('startcc').value,endcc:$('endcc').value,ccused:calcCCUsed(s,n),notes:$('notes').value};
           try{
             if(editingId){
               await updateDoc(doc(db,'daily_agenda',editingId),payload);
@@ -579,10 +592,8 @@ By : ${r.by||"-"}`;
 
 
         runningCC += ccused;
-
-
-        const remainingCC =
-            totalStockCC - runningCC;
+        const cyclePosition = runningCC % totalStockCC;
+        const remainingCC = cyclePosition === 0 ? totalStockCC : totalStockCC - cyclePosition;
 
 
         const notes =
@@ -619,8 +630,8 @@ By : ${r.by||"-"}`;
     });
 
 
-    const finalRemaining =
-        totalStockCC - totalCC;
+    const finalPosition = totalCC % totalStockCC;
+    const finalRemaining = finalPosition === 0 ? totalStockCC : totalStockCC - finalPosition;
 
 
     csv +=
@@ -726,7 +737,7 @@ $('importFile').addEventListener('change', async (e) => {
         takehome: i - x,
         startcc: r.startcc ?? '',
         endcc: r.endcc ?? '',
-        ccused: (n >= s && s > 0) ? (n - s + 1) : 0,
+        ccused: calcCCUsed(s,n),
         notes: r.notes || '',
         createdAt: new Date().toISOString()
       });
