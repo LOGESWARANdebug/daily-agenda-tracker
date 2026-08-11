@@ -180,6 +180,7 @@ input{
 💾 Export Backup
 </button>
 <button onclick="resetCC()">🔄 New CC</button>
+<button onclick="exportAgenda()">Export Data(ALL)</button>
 
 <h3 id="takehome">Take Home: 0</h3>
 <h3 id="ccused">CC Used: 0</h3>
@@ -502,7 +503,28 @@ function exportBackup(){
 
     a.click();
 }
+function exportAgenda() {
+    const data = JSON.parse(localStorage.getItem("dailyAgenda") || "[]");
 
+    if (data.length === 0) {
+        alert("No data to export.");
+        return;
+    }
+
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "daily-agenda.json";
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 function importBackup(event){
 
     let file = event.target.files[0];
