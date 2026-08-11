@@ -371,6 +371,58 @@ closeSidebar.addEventListener("click", function () {
           let s=await getDoc(doc(db,'settings','cc')),c=Number(s.data()?.cycle||1)+1;
           await setDoc(doc(db,'settings','cc'),{cycle:c,remaining:700,updatedAt:new Date().toISOString()});$('cycle').textContent=c;$('remain').textContent=700;notice('New CC cycle started')
         };
+      document.getElementById('importOldFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  let arr;
+  try {
+    arr = JSON.parse(text);
+  } catch {
+    notice('Invalid backup file', 'danger');
+    return;
+  }
+
+  if (!Array.isArray(arr) || !arr.length) {
+    notice('No records found in file', 'danger');
+    return;
+  }
+
+  if (!confirm(`Import ${arr.length} old records into Firestore? This cannot be undone automatically.`)) return;
+
+  let ok = 0, fail = 0;
+  for (const r of arr) {
+    const i = Number(r.income || 0);
+    const x = Number(r.expense || 0);
+    const s = Number(r.startcc || 0);
+    const n = Number(r.endcc || 0);
+
+    try {
+      await addDoc(collection(db, 'daily_agenda'), {
+        date: r.date || '',
+        employeeId: user.uid,
+        by: r.by || profile.name || user.email,
+        opening: r.opening ?? '',
+        closing: r.closing ?? '',
+        income: i,
+        expense: x,
+        takehome: i - x,
+        startcc: r.startcc ?? '',
+        endcc: r.endcc ?? '',
+        ccused: (n >= s && s > 0) ? (n - s + 1) : 0,
+        notes: r.notes || '',
+        createdAt: new Date().toISOString()
+      });
+      ok++;
+    } catch (err) {
+      fail++;
+    }
+  }
+
+  notice(`Imported ${ok} records${fail ? `, ${fail} failed` : ''}`, fail ? 'warning' : 'success');
+  await load(); // refresh dashboard/history
+});
 
       function exportMonthlyCSV() {
 
@@ -518,58 +570,7 @@ closeSidebar.addEventListener("click", function () {
             type: "text/csv;charset=utf-8;"
         }
     );
-        document.getElementById('importOldFile').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const text = await file.text();
-  let arr;
-  try {
-    arr = JSON.parse(text);
-  } catch {
-    notice('Invalid backup file', 'danger');
-    return;
-  }
-
-  if (!Array.isArray(arr) || !arr.length) {
-    notice('No records found in file', 'danger');
-    return;
-  }
-
-  if (!confirm(`Import ${arr.length} old records into Firestore? This cannot be undone automatically.`)) return;
-
-  let ok = 0, fail = 0;
-  for (const r of arr) {
-    const i = Number(r.income || 0);
-    const x = Number(r.expense || 0);
-    const s = Number(r.startcc || 0);
-    const n = Number(r.endcc || 0);
-
-    try {
-      await addDoc(collection(db, 'daily_agenda'), {
-        date: r.date || '',
-        employeeId: user.uid,
-        by: r.by || profile.name || user.email,
-        opening: r.opening ?? '',
-        closing: r.closing ?? '',
-        income: i,
-        expense: x,
-        takehome: i - x,
-        startcc: r.startcc ?? '',
-        endcc: r.endcc ?? '',
-        ccused: (n >= s && s > 0) ? (n - s + 1) : 0,
-        notes: r.notes || '',
-        createdAt: new Date().toISOString()
-      });
-      ok++;
-    } catch (err) {
-      fail++;
-    }
-  }
-
-  notice(`Imported ${ok} records${fail ? `, ${fail} failed` : ''}`, fail ? 'warning' : 'success');
-  await load(); // refresh dashboard/history
-});
+        
 
 
     const url =
