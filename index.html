@@ -1,0 +1,747 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Daily Agenda</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+  </head>
+  <body>
+    <aside id="side" class="sidebar">
+
+    <div class="brand">
+        📋 Daily Agenda
+
+      <!-- Mobile Close Button -->
+        <button
+            id="closeSidebar"
+            class="close-btn"
+            type="button"
+        >
+            ✕
+        </button>
+    </div>
+
+    <nav class="nav flex-column mt-3">
+
+        <a
+            class="nav-link"
+            data-page="upload"
+            href="#"
+        >
+            ☁️ Upload Data
+        </a>
+
+        <a
+            class="nav-link admin"
+            data-page="dashboard"
+            href="#"
+        >
+            📊 Dashboard
+        </a>
+
+        <a
+            class="nav-link admin"
+            data-page="history"
+            href="#"
+        >
+            🕘 History
+        </a>
+
+        <a
+            class="nav-link admin"
+            data-page="reports"
+            href="#"
+        >
+            📄 Reports
+        </a>
+
+        <a
+            class="nav-link admin"
+            data-page="cc"
+            href="#"
+        >
+            💳 CC Management
+        </a>
+
+        <a
+            class="nav-link admin"
+            href="index__.html"
+            class="btn btn-primary"
+       >
+          📄 Open Classic Page
+        </a>
+
+
+    </nav>
+
+    <div class="position-absolute bottom-0 w-100 p-3">
+
+        <button
+            id="logout"
+            class="btn btn-outline-light w-100"
+        >
+            Logout
+        </button>
+
+    </div>
+
+</aside>
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <button id="menu" class="btn btn-outline-secondary d-lg-none">☰</button>
+          <strong id="title">Upload Daily Data</strong>
+        </div>
+        <div class="text-end">
+          <b id="name">User</b>
+          <br>
+          <small id="role">Employee</small>
+        </div>
+      </header>
+      <div class="content">
+        <div id="alert">
+        </div>
+        <section id="upload" class="page">
+          <div class="card">
+            <div class="card-body p-4">
+              <h4>📤 Daily Agenda Upload</h4>
+              <p class="text-secondary">Employees can submit data. They cannot see previous records.</p>
+              <form id="agenda">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label>Date</label>
+                    <input id="date" type="date" class="form-control" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label>Employee</label>
+                    <input id="by" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-4">
+                    <label>Opening</label>
+                    <input id="opening" type="number" class="form-control">
+                  </div>
+                  <div class="col-md-4">
+                    <label>Closing</label>
+                    <input id="closing" type="number" class="form-control">
+                  </div>
+                  <div class="col-md-4">
+                    <label>Income</label>
+                    <input id="income" type="number" class="form-control">
+                  </div>
+                  <div class="col-md-4">
+                    <label>Expense</label>
+                    <input id="expense" type="number" class="form-control">
+                  </div>
+                  <div class="col-md-4">
+                    <label>Starting CC</label>
+                    <input id="startcc" type="number" class="form-control">
+                  </div>
+                  <div class="col-md-4">
+                    <label>Ending CC</label>
+                    <input id="endcc" type="number" class="form-control">
+                  </div>
+                  <div class="col-12">
+                    <label>Notes</label>
+                    <textarea id="notes" class="form-control" rows="4">
+                      </textarea>
+                  </div>
+                </div>
+                <div class="row mt-3">
+                  <div class="col-md-6">
+                    <div class="card stat">
+                      <div class="card-body">Take Home <h4 id="take">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card stat">
+                      <div class="card-body">CC Used <h4 id="used">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button id="submitBtn" class="btn btn-primary btn-lg mt-3">☁️ Submit Data</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-outline-secondary btn-lg mt-3 ms-2 d-none">✖ Cancel Edit</button>
+              </form>
+            </div>
+          </div>
+        </section>
+        <section id="dashboard" class="page d-none">
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="mb-3">📅 Dashboard Filters</h5>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label class="form-label">Money Month</label>
+                  <select id="dashMonth" class="form-select"><option value="all">All Months</option></select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">CC Cycle</label>
+                  <select id="dashCycle" class="form-select"><option value="all">All Cycles</option></select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <button id="dashReset" type="button" class="btn btn-outline-secondary w-100">↺ Reset Filters</button>
+                </div>
+              </div>
+              <small class="text-secondary">Income / Expense / Take Home follow the selected month. CC Remaining follows the selected CC cycle.</small>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <div class="card stat">
+                <div class="card-body">Income<h3 id="si">0</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card stat">
+                <div class="card-body">Expense<h3 id="se">0</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card stat">
+                <div class="card-body">Take Home<h3 id="st">0</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card stat">
+                <div class="card-body">CC Remaining<h3 id="sc">700</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="history" class="page d-none">
+          <div class="card">
+            <div class="card-body">
+              <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                  <input id="sd" type="date" class="form-control">
+                </div>
+                <div class="col-md-4">
+                  <input id="sear" class="form-control" placeholder="Search employee">
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Employee</th>
+                      <th>Income</th>
+                      <th>Expense</th>
+                      <th>Take Home</th>
+                      <th>CC</th>
+                      <th>Notes</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="reports" class="page d-none">
+          <div class="card">
+            <div class="card-body">
+              <h4>Reports & Backup</h4>
+              <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">Money Month</label>
+                  <select id="reportMonth" class="form-select"><option value="all">All Months</option></select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">CC Cycle</label>
+                  <select id="reportCycle" class="form-select"><option value="all">All Cycles</option></select>
+                </div>
+              </div>
+              <button id="csv" class="btn btn-primary">Export Selected CSV</button>
+              <button id="backup" class="btn btn-outline-secondary ms-2">Export Backup </button>
+              <label
+                    class="btn btn-outline-primary"
+                >
+                    📥 Import Backup
+
+                    <input
+                        type="file"
+                        id="importFile"
+                        accept=".json"
+                        hidden
+                    >
+                </label>
+              <button
+    id="monthlyReport"
+    class="btn btn-success"
+>
+    📊 Monthly CSV Report
+</button>
+            </div>
+          </div>
+        </section><section id="cc" class="page d-none">
+          <div class="card">
+            <div class="card-body"><h4>CC Management</h4>
+              <p>Cycle <b id="cycle">1</b> — Remaining <b id="remain">700</b></p>
+              <button id="newcc" class="btn btn-warning">🔄 New 700 CC Cycle</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script type="module">import{initializeApp}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';import{getFirestore,doc,getDoc,collection,addDoc,getDocs,query,orderBy,deleteDoc,setDoc,updateDoc}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+      document
+    .querySelectorAll(".sidebar .nav-link")
+    .forEach(link => {
+
+        link.addEventListener("click", function () {
+
+            // Remove blue from all menu items
+            document
+                .querySelectorAll(".sidebar .nav-link")
+                .forEach(item => {
+                    item.classList.remove("active");
+                });
+
+            // Add blue to clicked menu item
+            this.classList.add("active");
+
+        });
+
+    });
+
+      const closeSidebar =
+    document.getElementById("closeSidebar");
+
+const sidebar =
+    document.getElementById("side");
+
+closeSidebar.addEventListener("click", function () {
+
+    sidebar.classList.remove("show");
+
+});
+      import{firebaseConfig}from'./firebase-config.js';
+      
+      const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+      
+      let user,profile,rows=[],ccInfo={cycle:1,cycleStartAt:null};
+      
+      const $=id=>document.getElementById(id),today=()=>new Date().toISOString().slice(0,10);$('date').value=today();
+      
+      function notice(t,c='success')
+      {
+        $('alert').innerHTML='<div class="alert alert-'+c+'">'+t+'</div>'
+      }
+      
+      function calcCCUsed(start,end){
+        const s=Number(start||0), n=Number(end||0);
+        if(s<1||s>700||n<1||n>700)return 0;
+        return n>=s ? n-s+1 : (700-s+1)+n;
+      }
+      function calc(){
+        const i=+$('income').value||0,e=+$('expense').value||0;
+        $('take').textContent=i-e;
+        $('used').textContent=calcCCUsed($('startcc').value,$('endcc').value);
+      }
+      document.querySelectorAll('#agenda input,#agenda textarea').forEach(x=>x.oninput=calc);
+      async function loadCC(){
+        try{
+          let s=await getDoc(doc(db,'settings','cc'));
+          ccInfo=s.exists()?{cycle:s.data().cycle||1,cycleStartAt:s.data().cycleStartAt||null}:{cycle:1,cycleStartAt:null};
+        }catch(e){
+          ccInfo={cycle:1,cycleStartAt:null};
+        }
+        $('cycle').textContent=ccInfo.cycle;
+      }
+
+      function getCCRecords(){
+        return [...rows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+      }
+
+      // CC cycles are derived from the real CC sequence. A new cycle starts
+      // when the next record starts at 1 (or the same record wraps around).
+      function getCycleRecords(){
+        const sorted=getCCRecords();
+        let cycle=1, previousEnd=null;
+        return sorted.map(r=>{
+          const s=Number(r.startcc||0), n=Number(r.endcc||0);
+          if(previousEnd!==null && s>0 &&
+             ((s===1 && previousEnd>1) || (n>0 && n<s))) cycle++;
+          previousEnd=n||previousEnd;
+          return {...r,_cycle:cycle};
+        });
+      }
+
+      function getCycles(){
+        return [...new Set(getCycleRecords().map(r=>r._cycle))].sort((a,b)=>a-b);
+      }
+
+      function getMonths(){
+        return [...new Set(rows.map(r=>String(r.date||'').slice(0,7)).filter(Boolean))].sort();
+      }
+
+      function populateFilters(){
+        const cycles=getCycles(), months=getMonths();
+        ['dashCycle','reportCycle'].forEach(id=>{
+          const el=$(id); if(!el)return;
+          const old=el.value;
+          el.innerHTML='<option value="all">All Cycles</option>'+
+            cycles.map(c=>`<option value="${c}">Cycle ${c}</option>`).join('');
+          if(cycles.includes(Number(old))) el.value=old;
+        });
+        ['dashMonth','reportMonth'].forEach(id=>{
+          const el=$(id); if(!el)return;
+          const old=el.value;
+          el.innerHTML='<option value="all">All Months</option>'+
+            months.map(m=>`<option value="${m}">${m}</option>`).join('');
+          if(months.includes(old)) el.value=old;
+        });
+      }
+
+      function filteredMoneyRows(month){
+        return rows.filter(r=>month==='all'||String(r.date||'').startsWith(month));
+      }
+
+      function selectedCCCycle(){
+        const v=$('dashCycle')?.value||'all';
+        return v==='all'?null:Number(v);
+      }
+
+      function updateCCDisplays(cycleOverride){
+        const cycle=cycleOverride===undefined?selectedCCCycle():cycleOverride;
+        const cycleRows=getCycleRecords()
+          .filter(r=>cycle===null||r._cycle===cycle);
+        const used=cycleRows.reduce((a,r)=>a+Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0),0);
+        const pos=used%700;
+        const remaining=pos===0?700:700-pos;
+        const displayCycle=cycle===null?(getCycles().length||1):cycle;
+        $('cycle').textContent=displayCycle;
+        $('sc').textContent=remaining;
+        $('remain').textContent=remaining;
+      }
+
+      onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html';
+      user=u;let s=await getDoc(doc(db,'users',u.uid));if(!s.exists()){await signOut(auth);
+                                                                       
+      return location.href='login.html'}profile=s.data();
+                                        
+      $('name').textContent=profile.name||u.email;$('role').textContent=profile.role==='admin'?'Administrator':'Employee';$('by').value=profile.name||u.email;
+      if(profile.role!=='admin')document.querySelectorAll('.admin').forEach(x=>x.remove());
+        
+      else{await loadCC();await load();show('dashboard')}});
+      
+      document.querySelectorAll('[data-page]').forEach(x=>x.onclick=e=>{e.preventDefault();
+      show(x.dataset.page)});
+      
+      function show(p)
+      {
+        document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));$(p).classList.remove('d-none');
+                       $('title').textContent={upload:'Upload Daily Data',dashboard:'Admin Dashboard',history:'Submission History',reports:'Reports & Backup',cc:'CC Management'}[p];
+        
+       if(p==='history')render();
+        
+       if(p==='dashboard'||p==='cc')updateCCDisplays();if(p==='dashboard')stats()}$('menu').onclick=()=>$('side').classList.toggle('show');$('logout').onclick=()=>signOut(auth);
+      
+      let editingId=null;
+
+      function resetFormToCreateMode(){
+        editingId=null;
+        $('agenda').reset();
+        $('date').value=today();
+        $('by').value=profile.name||user.email;
+        $('submitBtn').textContent='☁️ Submit Data';
+        $('cancelEditBtn').classList.add('d-none');
+        calc();
+      }
+
+      $('cancelEditBtn').onclick=resetFormToCreateMode;
+
+      $('agenda').onsubmit=async e=>
+        {
+          e.preventDefault();
+          let i=+$('income').value||0,x=+$('expense').value||0,s=+$('startcc').value||0,n=+$('endcc').value||0;
+          const payload={date:$('date').value,employeeId:user.uid,by:profile.name||user.email,opening:$('opening').value,closing:$('closing').value,income:i,expense:x,takehome:i-x,startcc:$('startcc').value,endcc:$('endcc').value,ccused:calcCCUsed(s,n),notes:$('notes').value};
+          try{
+            if(editingId){
+              await updateDoc(doc(db,'daily_agenda',editingId),payload);
+              notice('Entry updated successfully');
+            }else{
+              await addDoc(collection(db,'daily_agenda'),{...payload,createdAt:new Date().toISOString()});
+              notice('Data uploaded successfully');
+            }
+            resetFormToCreateMode();
+            await load();
+          }catch(e){notice(editingId?'Update failed':'Upload failed','danger')}};
+      async function load()
+      {
+        let s=await getDocs(query(collection(db,'daily_agenda'),orderBy('date','desc')));
+        rows=s.docs.map(d=>({id:d.id,...d.data()}));
+        populateFilters();
+        stats();
+      }
+
+      function stats()
+      {
+        const month=$('dashMonth')?.value||'all';
+        const moneyRows=filteredMoneyRows(month);
+        const i=moneyRows.reduce((a,r)=>a+Number(r.income||0),0);
+        const e=moneyRows.reduce((a,r)=>a+Number(r.expense||0),0);
+        $('si').textContent=i.toLocaleString('en-IN');
+        $('se').textContent=e.toLocaleString('en-IN');
+        $('st').textContent=(i-e).toLocaleString('en-IN');
+        updateCCDisplays();
+      }
+
+      function esc(v)
+      {
+        return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))
+      }
+      function entryText(r){
+        return `Daily Agenda
+
+Date : ${r.date}
+
+Opening Balance : ${r.opening||0}
+Closing Balance : ${r.closing||0}
+
+Total Income Today : ${r.income||0}
+Total Expense Today : ${r.expense||0}
+
+Take Home Today : ${r.takehome||0}
+
+Starting CC : ${r.startcc||0}
+Ending CC : ${r.endcc||0}
+No. of CC Used : ${r.ccused||0}
+
+Notes :
+${r.notes||"-"}
+
+By : ${r.by||"-"}`;
+      }
+
+      function downloadEntry(id){
+        const r=rows.find(x=>x.id===id);
+        if(!r)return;
+        const blob=new Blob([entryText(r)],{type:'text/plain'});
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=`DailyAgenda_${r.date}.txt`;
+        a.click();
+      }
+
+      function editEntry(id){
+        const r=rows.find(x=>x.id===id);
+        if(!r)return;
+        editingId=id;
+        $('date').value=r.date||'';
+        $('opening').value=r.opening||'';
+        $('closing').value=r.closing||'';
+        $('income').value=r.income||'';
+        $('expense').value=r.expense||'';
+        $('startcc').value=r.startcc||'';
+        $('endcc').value=r.endcc||'';
+        $('notes').value=r.notes||'';
+        $('submitBtn').textContent='💾 Update Entry';
+        $('cancelEditBtn').classList.remove('d-none');
+        calc();
+        show('upload');
+      }
+
+      async function shareEntry(id){
+        const r=rows.find(x=>x.id===id);
+        if(!r)return;
+        const text=entryText(r);
+        if(navigator.share){
+          try{await navigator.share({title:'Daily Agenda',text});}catch(e){}
+        }else{
+          alert(text);
+        }
+      }
+
+      function render()
+      {
+        let d=$('sd').value,q=($('sear').value||'').toLowerCase(),a=rows.filter(r=>(!d||r.date===d)&&(!q||(r.by||'').toLowerCase().includes(q)));
+        $('tbody').innerHTML=a.map(r=>`<tr><td>${r.date}</td><td>${esc(r.by)}</td><td>${r.income||0}</td><td>${r.expense||0}</td><td>${r.takehome||0}</td><td>${r.ccused||0}</td><td>${esc(r.notes||'-')}</td><td class="text-nowrap">
+        <button class="btn btn-sm btn-outline-primary" data-download="${r.id}">⬇️</button>
+        <button class="btn btn-sm btn-outline-warning" data-edit="${r.id}">✏️</button>
+        <button class="btn btn-sm btn-outline-success" data-share="${r.id}">📤</button>
+        <button class="btn btn-sm btn-danger" data-id="${r.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="text-center">No records</td></tr>';
+        document.querySelectorAll('[data-download]').forEach(b=>b.onclick=()=>downloadEntry(b.dataset.download));
+        document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editEntry(b.dataset.edit));
+        document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareEntry(b.dataset.share));
+        document.querySelectorAll('[data-id]').forEach
+          (b=>b.onclick=async()=>{if(confirm('Delete record?'))
+          {
+            await deleteDoc(doc(db,'daily_agenda',b.dataset.id));
+            await load();render()}})}$('sd').onchange=render;$('sear').oninput=render;function csvCell(v){
+        return `"${String(v??'').replaceAll('"','""')}"`;
+      }
+
+      function exportCSV(){
+        const month=$('reportMonth')?.value||'all';
+        const cycleValue=$('reportCycle')?.value||'all';
+        const cycle=cycleValue==='all'?null:Number(cycleValue);
+
+        const filtered=getCycleRecords()
+          .filter(r=>(cycle===null||r._cycle===cycle) &&
+                     (month==='all'||String(r.date||'').startsWith(month)))
+          .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+
+        if(!filtered.length){alert('No records found for the selected filters.');return;}
+
+        let totalIncome=0,totalExpense=0,totalTakeHome=0,totalCC=0;
+        let csv='Date,CC Cycle,Income,Expense,Take Home,Start CC,End CC,CC Used,Remaining CC,Notes,By\n';
+
+        // CC remaining is calculated from the beginning of each real cycle,
+        // not from the beginning of the selected month.
+        const runningByCycle={};
+        const remainingById={};
+        getCycleRecords()
+          .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))
+          .forEach(r=>{
+            const c=r._cycle;
+            const ccused=Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0);
+            runningByCycle[c]=(runningByCycle[c]||0)+ccused;
+            const pos=runningByCycle[c]%700;
+            remainingById[r.id]=pos===0?700:700-pos;
+          });
+
+        filtered.forEach(r=>{
+          const c=r._cycle;
+          const ccused=Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0);
+          const remaining=remainingById[r.id]??700;
+
+          const income=Number(r.income||0);
+          const expense=Number(r.expense||0);
+          const takehome=Number(r.takehome ?? income-expense);
+
+          csv+=[
+            csvCell(r.date||''),csvCell(c),csvCell(income),csvCell(expense),
+            csvCell(takehome),csvCell(r.startcc||''),csvCell(r.endcc||''),
+            csvCell(ccused),csvCell(remaining),csvCell(r.notes||''),csvCell(r.by||'')
+          ].join(',')+'\n';
+
+          totalIncome+=income; totalExpense+=expense;
+          totalTakeHome+=takehome; totalCC+=ccused;
+        });
+
+        csv+=['TOTAL',csvCell(cycle===null?'All':cycle),csvCell(totalIncome),
+          csvCell(totalExpense),csvCell(totalTakeHome),'','',csvCell(totalCC),'','',''].join(',')+'\n';
+
+        const labelMonth=month==='all'?'AllMonths':month;
+        const labelCycle=cycle===null?'AllCycles':`Cycle${cycle}`;
+        download(csv,`${labelMonth}_${labelCycle}_Report.csv`,'text/csv;charset=utf-8;');
+      }
+
+      function exportMonthlyCSV(){ exportCSV(); }
+
+      $('csv').onclick=exportCSV;
+      $('monthlyReport').onclick=exportMonthlyCSV;
+
+      function download(x,n,t)
+      {
+        let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([x],{type:t}));a.download=n;a.click()
+      }
+
+      $('newcc').onclick=async()=>
+      {
+        if(!confirm('Start a new 700 CC cycle? This marks right now as the start of the new cartridge.'))return;
+        let newCycle=(ccInfo.cycle||1)+1;
+        let cycleStartAt=new Date().toISOString();
+        await setDoc(doc(db,'settings','cc'),{cycle:newCycle,cycleStartAt,updatedAt:cycleStartAt});
+        ccInfo={cycle:newCycle,cycleStartAt};
+        $('cycle').textContent=newCycle;
+        updateCCDisplays();
+        populateFilters();
+        notice('New CC cycle started — remaining reset to 700');
+      };
+
+      ['dashMonth','dashCycle'].forEach(id=>{
+        $(id).addEventListener('change',()=>stats());
+      });
+      $('dashReset').onclick=()=>{
+        $('dashMonth').value='all';
+        $('dashCycle').value='all';
+        stats();
+      };
+
+      $('importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  let arr;
+  try {
+    arr = JSON.parse(text);
+  } catch {
+    notice('Invalid backup file', 'danger');
+    e.target.value = '';
+    return;
+  }
+
+  if (!Array.isArray(arr) || !arr.length) {
+    notice('No records found in file', 'danger');
+    e.target.value = '';
+    return;
+  }
+
+  if (!confirm(`Import ${arr.length} old records into Firestore? This cannot be undone automatically.`)) {
+    e.target.value = '';
+    return;
+  }
+
+  let ok = 0, skipped = 0, fail = 0;
+
+  // Fetch existing records once, to skip duplicates (same date + by + startcc)
+  const existingSnap = await getDocs(collection(db, 'daily_agenda'));
+  const existingKeys = new Set(
+    existingSnap.docs.map(d => {
+      const dd = d.data();
+      return `${dd.date || ''}|${dd.by || ''}|${dd.startcc ?? ''}`;
+    })
+  );
+
+  for (const r of arr) {
+    const i = Number(r.income || 0);
+    const x = Number(r.expense || 0);
+    const s = Number(r.startcc || 0);
+    const n = Number(r.endcc || 0);
+
+    const key = `${r.date || ''}|${r.by || ''}|${r.startcc ?? ''}`;
+    if (existingKeys.has(key)) { skipped++; continue; }
+
+    try {
+      await addDoc(collection(db, 'daily_agenda'), {
+        date: r.date || '',
+        employeeId: user.uid,
+        by: r.by || profile.name || user.email,
+        opening: r.opening ?? '',
+        closing: r.closing ?? '',
+        income: i,
+        expense: x,
+        takehome: i - x,
+        startcc: r.startcc ?? '',
+        endcc: r.endcc ?? '',
+        ccused: calcCCUsed(s,n),
+        notes: r.notes || '',
+        createdAt: new Date().toISOString()
+      });
+      ok++;
+    } catch (err) {
+      fail++;
+    }
+  }
+
+  notice(`Imported ${ok} records${skipped ? `, skipped ${skipped} duplicate(s)` : ''}${fail ? `, ${fail} failed` : ''}`, fail ? 'warning' : 'success');
+  e.target.value = '';
+  await load();
+});
+    </script>
+  </body>
+</html>
