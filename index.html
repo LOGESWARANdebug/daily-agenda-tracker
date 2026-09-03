@@ -583,6 +583,18 @@ By : ${r.by||"-"}`;
         return `"${String(v??'').replaceAll('"','""')}"`;
       }
 
+      function formatDateDMY(dateValue) {
+    if (!dateValue) return '';
+
+    const parts = String(dateValue).split('-');
+
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    return String(dateValue);
+}
+
       function exportCSV() {
     const month = $('reportMonth')?.value || 'all';
     const cycleValue = $('reportCycle')?.value || 'all';
