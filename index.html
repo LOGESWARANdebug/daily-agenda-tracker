@@ -583,143 +583,146 @@ By : ${r.by||"-"}`;
         return `"${String(v??'').replaceAll('"','""')}"`;
       }
 
-      function exportCSV(){
-        if (!rows.length) {
-    alert('No data available.');
-    return;
-  }
+      function exportCSV() {
+    const month = $('reportMonth')?.value || 'all';
+    const cycleValue = $('reportCycle')?.value || 'all';
+    const cycle = cycleValue === 'all' ? null : Number(cycleValue);
 
-  fillFilters();
+    // Get ALL records first.
+    // Do NOT filter by month before calculating CC remaining.
+    const allRecords = getCycleRecords()
+        .sort((a, b) =>
+            String(a.date || '').localeCompare(String(b.date || ''))
+        );
 
-  const month = $('reportMonth')?.value || 'ALL';
-  const cycle = $('reportCycle')?.value || 'ALL';
+    /*
+     * Calculate CC remaining row-by-row.
+     *
+     * Example:
+     * Cycle 2
+     * 1 -> 23  = 23 used  -> 677 remaining
+     * 24 -> 40 = 17 used  -> 660 remaining
+     * ...
+     *
+     * We must NOT use the final cycle remaining for every row.
+     */
+    const runningByCycle = {};
+    const remainingById = {};
 
-  // First calculate the real CC cycle and the running remaining
-  // BEFORE applying month/cycle filters.
-  const allCycleRecords = ccCycleRecords()
-    .sort((a, b) =>
-      String(a.date || '').localeCompare(String(b.date || '')) ||
-      String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
-    );
+    allRecords.forEach(r => {
+        const c = Number(r._cycle || 1);
 
-  const remainingById = {};
-  const usedByCycle = {};
+        const ccused = Number(
+            r.ccused || calcCCUsed(r.startcc, r.endcc) || 0
+        );
 
-  allCycleRecords.forEach(r => {
-    const c = Number(r.cccycle || 1);
+        if (!runningByCycle[c]) {
+            runningByCycle[c] = 0;
+        }
 
-    const used = Number(
-      r.ccused || calcCCUsed(r.startcc, r.endcc) || 0
-    );
+        runningByCycle[c] += ccused;
 
-    if (!usedByCycle[c]) {
-      usedByCycle[c] = 0;
+        const position = runningByCycle[c] % 700;
+
+        remainingById[r.id] =
+            position === 0 ? 700 : 700 - position;
+    });
+
+    // NOW apply month + cycle filters
+    const filtered = allRecords
+        .filter(r =>
+            (cycle === null || Number(r._cycle) === cycle) &&
+            (
+                month === 'all' ||
+                String(r.date || '').startsWith(month)
+            )
+        );
+
+    if (!filtered.length) {
+        alert('No records found for the selected filters.');
+        return;
     }
 
-    usedByCycle[c] += used;
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let totalTakeHome = 0;
+    let totalCC = 0;
 
-    // IMPORTANT:
-    // Remaining is calculated at THIS RECORD,
-    // not the final remaining of the whole cycle.
-    const position = usedByCycle[c] % 700;
-
-    remainingById[r.id] =
-      position === 0 ? 700 : 700 - position;
-  });
-
-  // Now apply the selected filters.
-  const filtered = allCycleRecords
-    .filter(r =>
-      (month === 'ALL' || monthOf(r.date) === month) &&
-      (cycle === 'ALL' || String(r.cccycle) === String(cycle))
-    );
-
-  if (!filtered.length) {
-    alert('No records found for the selected month/cycle.');
-    return;
-  }
-
-  let totalIncome = 0;
-  let totalExpense = 0;
-  let totalTakeHome = 0;
-  let totalCC = 0;
-
-  let csv =
-    'Date,CC Cycle,Income,Expense,Take Home,' +
-    'Start CC,End CC,CC Used,Remaining CC,Notes,By\n';
-
-  filtered.forEach(r => {
-
-    const income = Number(r.income || 0);
-    const expense = Number(r.expense || 0);
-    const takeHome = Number(
-      r.takehome ?? (income - expense)
-    );
-
-    const ccUsed = Number(
-      r.ccused ||
-      calcCCUsed(r.startcc, r.endcc) ||
-      0
-    );
-
-    // THIS is the important fix.
-    const remaining =
-      remainingById[r.id] ?? 700;
+    let csv =
+        'Date,CC Cycle,Income,Expense,Take Home,' +
+        'Start CC,End CC,CC Used,Remaining CC,Notes,By\n';
 
     const csvCell = value =>
-      `"${String(value ?? '').replace(/"/g, '""')}"`;
+        `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+    filtered.forEach(r => {
+
+        const income = Number(r.income || 0);
+        const expense = Number(r.expense || 0);
+
+        const takeHome = Number(
+            r.takehome ?? (income - expense)
+        );
+
+        const ccused = Number(
+            r.ccused ||
+            calcCCUsed(r.startcc, r.endcc) ||
+            0
+        );
+
+        // IMPORTANT:
+        // This is the remaining CC AFTER THIS ROW.
+        const remaining = remainingById[r.id] ?? 700;
+
+        csv += [
+            formatDateDMY(r.date || ''),
+            `Cycle ${r._cycle}`,
+            income,
+            expense,
+            takeHome,
+            r.startcc || '',
+            r.endcc || '',
+            ccused,
+            remaining,
+            r.notes || '',
+            r.by || ''
+        ].map(csvCell).join(',') + '\n';
+
+        totalIncome += income;
+        totalExpense += expense;
+        totalTakeHome += takeHome;
+        totalCC += ccused;
+    });
+
+    const selectedCycles = [
+        ...new Set(filtered.map(r => r._cycle))
+    ];
 
     csv += [
-      formatDateDMY(r.date || ''),
-      `Cycle ${r.cccycle}`,
-      income,
-      expense,
-      takeHome,
-      r.startcc || '',
-      r.endcc || '',
-      ccUsed,
-      remaining,
-      r.notes || '',
-      r.by || ''
+        'TOTAL',
+        selectedCycles.map(c => `Cycle ${c}`).join(' + '),
+        totalIncome,
+        totalExpense,
+        totalTakeHome,
+        '',
+        '',
+        totalCC,
+        '',
+        '',
+        ''
     ].map(csvCell).join(',') + '\n';
 
-    totalIncome += income;
-    totalExpense += expense;
-    totalTakeHome += takeHome;
-    totalCC += ccUsed;
-  });
+    const labelMonth =
+        month === 'all' ? 'AllMonths' : month;
 
-  const selectedCycles = [
-    ...new Set(filtered.map(r => r.cccycle))
-  ];
+    const labelCycle =
+        cycle === null ? 'AllCycles' : `Cycle${cycle}`;
 
-  csv += [
-    'TOTAL',
-    selectedCycles.map(c => `Cycle ${c}`).join(' + '),
-    totalIncome,
-    totalExpense,
-    totalTakeHome,
-    '',
-    '',
-    totalCC,
-    '',
-    '',
-    ''
-  ].map(v =>
-    `"${String(v ?? '').replace(/"/g, '""')}"`
-  ).join(',') + '\n';
-
-  const monthName =
-    month === 'ALL' ? 'AllMonths' : month;
-
-  const cycleName =
-    cycle === 'ALL' ? 'AllCycles' : `Cycle${cycle}`;
-
-  download(
-    csv,
-    `${monthName}_${cycleName}_Report.csv`,
-    'text/csv;charset=utf-8;'
-  );
+    download(
+        csv,
+        `${labelMonth}_${labelCycle}_Report.csv`,
+        'text/csv;charset=utf-8;'
+    );
 }
 
       function exportMonthlyCSV(){ exportCSV(); }
