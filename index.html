@@ -170,6 +170,25 @@
           </div>
         </section>
         <section id="dashboard" class="page d-none">
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="mb-3">📅 Dashboard Filters</h5>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label class="form-label">Money Month</label>
+                  <select id="dashMonth" class="form-select"><option value="all">All Months</option></select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">CC Cycle</label>
+                  <select id="dashCycle" class="form-select"><option value="all">All Cycles</option></select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <button id="dashReset" type="button" class="btn btn-outline-secondary w-100">↺ Reset Filters</button>
+                </div>
+              </div>
+              <small class="text-secondary">Income / Expense / Take Home follow the selected month. CC Remaining follows the selected CC cycle.</small>
+            </div>
+          </div>
           <div class="row g-3">
             <div class="col-md-3">
               <div class="card stat">
@@ -233,11 +252,17 @@
           <div class="card">
             <div class="card-body">
               <h4>Reports & Backup</h4>
-              <div class="row g-2 my-2">
-                <div class="col-md-6"><label class="form-label">Money Month</label><select id="reportMonth" class="form-select"></select></div>
-                <div class="col-md-6"><label class="form-label">CC Cycle</label><select id="reportCycle" class="form-select"></select></div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">Money Month</label>
+                  <select id="reportMonth" class="form-select"><option value="all">All Months</option></select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">CC Cycle</label>
+                  <select id="reportCycle" class="form-select"><option value="all">All Cycles</option></select>
+                </div>
               </div>
-              <button id="csv" class="btn btn-primary">Export CSV</button>
+              <button id="csv" class="btn btn-primary">Export Selected CSV</button>
               <button id="backup" class="btn btn-outline-secondary ms-2">Export Backup </button>
               <label
                     class="btn btn-outline-primary"
@@ -336,30 +361,71 @@ closeSidebar.addEventListener("click", function () {
       }
 
       function getCCRecords(){
-        return [...rows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')) || String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+        return [...rows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
       }
-      function ccCycleRecords(){
-        const sorted=getCCRecords(); let cycle=1, prevEnd=null;
+
+      // CC cycles are derived from the real CC sequence. A new cycle starts
+      // when the next record starts at 1 (or the same record wraps around).
+      function getCycleRecords(){
+        const sorted=getCCRecords();
+        let cycle=1, previousEnd=null;
         return sorted.map(r=>{
           const s=Number(r.startcc||0), n=Number(r.endcc||0);
-          if(prevEnd!==null && s>0 && Number(prevEnd)>0 && s < Number(prevEnd)) cycle++;
-          prevEnd=n>0?n:prevEnd;
-          return {...r, cccycle: Number(r.cccycle||cycle)===cycle ? cycle : cycle};
+          if(previousEnd!==null && s>0 &&
+             ((s===1 && previousEnd>1) || (n>0 && n<s))) cycle++;
+          previousEnd=n||previousEnd;
+          return {...r,_cycle:cycle};
         });
       }
-      function cycleInfo(){
-        const recs=ccCycleRecords(); const map={};
-        recs.forEach(r=>{ const c=r.cccycle; if(!map[c]) map[c]={cycle:c,used:0,lastEnd:null,count:0}; map[c].used+=Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0); if(Number(r.endcc||0)>0) map[c].lastEnd=Number(r.endcc); map[c].count++; });
-        Object.values(map).forEach(x=>{ x.remaining=x.used>=700?700-(x.used%700):700-x.used; if(x.remaining===0)x.remaining=700; });
-        return map;
+
+      function getCycles(){
+        return [...new Set(getCycleRecords().map(r=>r._cycle))].sort((a,b)=>a-b);
       }
-      function updateCCDisplays(){
-        const info=cycleInfo(), cycles=Object.keys(info).map(Number).sort((a,b)=>a-b);
-        const current=cycles.length?cycles[cycles.length-1]:(ccInfo.cycle||1), data=info[current];
-        const remaining=data?data.remaining:700;
-        $('cycle').textContent=current; $('sc').textContent=remaining; $('remain').textContent=remaining;
+
+      function getMonths(){
+        return [...new Set(rows.map(r=>String(r.date||'').slice(0,7)).filter(Boolean))].sort();
       }
-      
+
+      function populateFilters(){
+        const cycles=getCycles(), months=getMonths();
+        ['dashCycle','reportCycle'].forEach(id=>{
+          const el=$(id); if(!el)return;
+          const old=el.value;
+          el.innerHTML='<option value="all">All Cycles</option>'+
+            cycles.map(c=>`<option value="${c}">Cycle ${c}</option>`).join('');
+          if(cycles.includes(Number(old))) el.value=old;
+        });
+        ['dashMonth','reportMonth'].forEach(id=>{
+          const el=$(id); if(!el)return;
+          const old=el.value;
+          el.innerHTML='<option value="all">All Months</option>'+
+            months.map(m=>`<option value="${m}">${m}</option>`).join('');
+          if(months.includes(old)) el.value=old;
+        });
+      }
+
+      function filteredMoneyRows(month){
+        return rows.filter(r=>month==='all'||String(r.date||'').startsWith(month));
+      }
+
+      function selectedCCCycle(){
+        const v=$('dashCycle')?.value||'all';
+        return v==='all'?null:Number(v);
+      }
+
+      function updateCCDisplays(cycleOverride){
+        const cycle=cycleOverride===undefined?selectedCCCycle():cycleOverride;
+        const cycleRows=getCycleRecords()
+          .filter(r=>cycle===null||r._cycle===cycle);
+        const used=cycleRows.reduce((a,r)=>a+Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0),0);
+        const pos=used%700;
+        const remaining=pos===0?700:700-pos;
+        const displayCycle=cycle===null?(getCycles().length||1):cycle;
+        $('cycle').textContent=displayCycle;
+        $('sc').textContent=remaining;
+        $('remain').textContent=remaining;
+      }
+
       onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html';
       user=u;let s=await getDoc(doc(db,'users',u.uid));if(!s.exists()){await signOut(auth);
                                                                        
@@ -414,25 +480,24 @@ closeSidebar.addEventListener("click", function () {
           }catch(e){notice(editingId?'Update failed':'Upload failed','danger')}};
       async function load()
       {
-        let s=await getDocs(query(collection(db,'daily_agenda'),orderBy('date','desc')));rows=s.docs.map(d=>({id:d.id,...d.data()}));fillFilters();stats()
+        let s=await getDocs(query(collection(db,'daily_agenda'),orderBy('date','desc')));
+        rows=s.docs.map(d=>({id:d.id,...d.data()}));
+        populateFilters();
+        stats();
       }
-      function monthOf(date){ return String(date||'').slice(0,7); }
-      function formatDateDMY(date){ const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}/${m[2]}/${m[1]}`:String(date||''); }
-      function fillFilters(){
-        const months=[...new Set(rows.map(r=>monthOf(r.date)).filter(Boolean))].sort().reverse();
-        const cycles=[...new Set(ccCycleRecords().map(r=>r.cccycle))].sort((a,b)=>a-b);
-        ['dashMonth','reportMonth'].forEach(id=>{ const el=$(id); if(!el)return; const old=el.value; el.innerHTML=(id==='dashMonth'?'<option value="ALL">All Months</option>':'<option value="ALL">All Months</option>')+months.map(m=>`<option value="${m}">${m}</option>`).join(''); if(months.includes(old))el.value=old; });
-        ['dashCycle','reportCycle'].forEach(id=>{ const el=$(id); if(!el)return; const old=el.value; el.innerHTML='<option value="ALL">All Cycles</option>'+cycles.map(c=>`<option value="${c}">Cycle ${c}</option>`).join(''); if(cycles.map(String).includes(old))el.value=old; });
+
+      function stats()
+      {
+        const month=$('dashMonth')?.value||'all';
+        const moneyRows=filteredMoneyRows(month);
+        const i=moneyRows.reduce((a,r)=>a+Number(r.income||0),0);
+        const e=moneyRows.reduce((a,r)=>a+Number(r.expense||0),0);
+        $('si').textContent=i.toLocaleString('en-IN');
+        $('se').textContent=e.toLocaleString('en-IN');
+        $('st').textContent=(i-e).toLocaleString('en-IN');
+        updateCCDisplays();
       }
-      function selectedRows(month,cycle){ const recs=ccCycleRecords(); return recs.filter(r=>(!month||month==='ALL'||monthOf(r.date)===month)&&(!cycle||cycle==='ALL'||String(r.cccycle)===String(cycle))); }
-      function stats(){
-        const a=selectedRows($('dashMonth')?.value||'ALL',$('dashCycle')?.value||'ALL');
-        let i=a.reduce((x,r)=>x+Number(r.income||0),0),e=a.reduce((x,r)=>x+Number(r.expense||0),0);
-        $('si').textContent=i.toLocaleString('en-IN'); $('se').textContent=e.toLocaleString('en-IN'); $('st').textContent=(i-e).toLocaleString('en-IN');
-        const cycle= $('dashCycle')?.value||'ALL';
-        if(cycle!=='ALL'){ const inf=cycleInfo()[Number(cycle)]; $('sc').textContent=inf?inf.remaining:700; } else updateCCDisplays();
-      }
-      document.addEventListener('change',e=>{ if(e.target.id==='dashMonth'||e.target.id==='dashCycle')stats(); });
+
       function esc(v)
       {
         return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))
@@ -514,49 +579,99 @@ By : ${r.by||"-"}`;
           (b=>b.onclick=async()=>{if(confirm('Delete record?'))
           {
             await deleteDoc(doc(db,'daily_agenda',b.dataset.id));
-            await load();render()}})}$('sd').onchange=render;$('sear').oninput=render;$('csv').onclick=()=>
-        {
-          let h=['date','by','income','expense','takehome','startcc','endcc','ccused','notes'];
-          let c=[h.join(','),...rows.map(r=>h.map(k=>`"${String(r[k]??'').replaceAll('"','""')}"`).join(','))].join('\n');download(c,'DailyAgenda.csv','text/csv')};$('backup').onclick=()=>download(JSON.stringify(rows,null,2),'DailyAgenda_Backup.json','application/json');
-      
+            await load();render()}})}$('sd').onchange=render;$('sear').oninput=render;function csvCell(v){
+        return `"${String(v??'').replaceAll('"','""')}"`;
+      }
+
+      function exportCSV(){
+        const month=$('reportMonth')?.value||'all';
+        const cycleValue=$('reportCycle')?.value||'all';
+        const cycle=cycleValue==='all'?null:Number(cycleValue);
+
+        const filtered=getCycleRecords()
+          .filter(r=>(cycle===null||r._cycle===cycle) &&
+                     (month==='all'||String(r.date||'').startsWith(month)))
+          .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+
+        if(!filtered.length){alert('No records found for the selected filters.');return;}
+
+        let totalIncome=0,totalExpense=0,totalTakeHome=0,totalCC=0;
+        let csv='Date,CC Cycle,Income,Expense,Take Home,Start CC,End CC,CC Used,Remaining CC,Notes,By\n';
+
+        // CC remaining is calculated from the beginning of each real cycle,
+        // not from the beginning of the selected month.
+        const runningByCycle={};
+        const remainingById={};
+        getCycleRecords()
+          .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))
+          .forEach(r=>{
+            const c=r._cycle;
+            const ccused=Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0);
+            runningByCycle[c]=(runningByCycle[c]||0)+ccused;
+            const pos=runningByCycle[c]%700;
+            remainingById[r.id]=pos===0?700:700-pos;
+          });
+
+        filtered.forEach(r=>{
+          const c=r._cycle;
+          const ccused=Number(r.ccused||calcCCUsed(r.startcc,r.endcc)||0);
+          const remaining=remainingById[r.id]??700;
+
+          const income=Number(r.income||0);
+          const expense=Number(r.expense||0);
+          const takehome=Number(r.takehome ?? income-expense);
+
+          csv+=[
+            csvCell(r.date||''),csvCell(c),csvCell(income),csvCell(expense),
+            csvCell(takehome),csvCell(r.startcc||''),csvCell(r.endcc||''),
+            csvCell(ccused),csvCell(remaining),csvCell(r.notes||''),csvCell(r.by||'')
+          ].join(',')+'\n';
+
+          totalIncome+=income; totalExpense+=expense;
+          totalTakeHome+=takehome; totalCC+=ccused;
+        });
+
+        csv+=['TOTAL',csvCell(cycle===null?'All':cycle),csvCell(totalIncome),
+          csvCell(totalExpense),csvCell(totalTakeHome),'','',csvCell(totalCC),'','',''].join(',')+'\n';
+
+        const labelMonth=month==='all'?'AllMonths':month;
+        const labelCycle=cycle===null?'AllCycles':`Cycle${cycle}`;
+        download(csv,`${labelMonth}_${labelCycle}_Report.csv`,'text/csv;charset=utf-8;');
+      }
+
+      function exportMonthlyCSV(){ exportCSV(); }
+
+      $('csv').onclick=exportCSV;
+      $('monthlyReport').onclick=exportMonthlyCSV;
+
       function download(x,n,t)
       {
-        let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([x],{type:t}));a.download=n;a.click()}$('newcc').onclick=async()=>
-        {
-          if(!confirm('Start a new 700 CC cycle? This marks right now as the start of the new cartridge.'))return;
-          let newCycle=(ccInfo.cycle||1)+1;
-          let cycleStartAt=new Date().toISOString();
-          await setDoc(doc(db,'settings','cc'),{cycle:newCycle,cycleStartAt,updatedAt:cycleStartAt});
-          ccInfo={cycle:newCycle,cycleStartAt};
-          $('cycle').textContent=newCycle;
-          updateCCDisplays();
-          notice('New CC cycle started — remaining reset to 700');
-        };
-
-      function exportMonthlyCSV(){
-        if(!rows.length){alert('No data available.');return;}
-        fillFilters();
-        const month=$('reportMonth').value||'ALL', cycle=$('reportCycle').value||'ALL';
-        const filtered=selectedRows(month,cycle).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-        if(!filtered.length){alert('No records found for the selected month/cycle.');return;}
-        let totalIncome=0,totalExpense=0,totalTakeHome=0,totalCC=0;
-        const info=cycleInfo();
-        let csv='Date,CC Cycle,Income,Expense,Take Home,Start CC,End CC,CC Used,Remaining CC,Notes,By\n';
-        filtered.forEach(r=>{
-          const income=Number(r.income||0),expense=Number(r.expense||0),take=Number(r.takehome||income-expense),used=Number(r.ccused||calcCCUsed(r.startcc,r.endcc));
-          const remaining=info[r.cccycle]?info[r.cccycle].remaining:700;
-          const escCsv=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-          csv += [formatDateDMY(r.date),`Cycle ${r.cccycle}`,income,expense,take,r.startcc||'',r.endcc||'',used,remaining, r.notes||'',r.by||''].map(escCsv).join(',')+'\n';
-          totalIncome+=income; totalExpense+=expense; totalTakeHome+=take; totalCC+=used;
-        });
-        const selectedCycles=[...new Set(filtered.map(r=>r.cccycle))];
-        csv += ["TOTAL",selectedCycles.map(c=>'Cycle '+c).join(' + '),totalIncome,totalExpense,totalTakeHome,'','',totalCC,'','', ''].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')+'\n';
-        const suffix=month==='ALL'?'AllMonths':month; const cyc=cycle==='ALL'?'AllCycles':'Cycle'+cycle;
-        download(csv,`${suffix}_${cyc}_Report.csv`,'text/csv;charset=utf-8;');
+        let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([x],{type:t}));a.download=n;a.click()
       }
-      $('monthlyReport').onclick = exportMonthlyCSV;
 
-$('importFile').addEventListener('change', async (e) => {
+      $('newcc').onclick=async()=>
+      {
+        if(!confirm('Start a new 700 CC cycle? This marks right now as the start of the new cartridge.'))return;
+        let newCycle=(ccInfo.cycle||1)+1;
+        let cycleStartAt=new Date().toISOString();
+        await setDoc(doc(db,'settings','cc'),{cycle:newCycle,cycleStartAt,updatedAt:cycleStartAt});
+        ccInfo={cycle:newCycle,cycleStartAt};
+        $('cycle').textContent=newCycle;
+        updateCCDisplays();
+        populateFilters();
+        notice('New CC cycle started — remaining reset to 700');
+      };
+
+      ['dashMonth','dashCycle'].forEach(id=>{
+        $(id).addEventListener('change',()=>stats());
+      });
+      $('dashReset').onclick=()=>{
+        $('dashMonth').value='all';
+        $('dashCycle').value='all';
+        stats();
+      };
+
+      $('importFile').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
